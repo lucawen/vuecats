@@ -1,16 +1,16 @@
 <template>
   <div>
     <div class="columns is-multiline">
-        <div v-for="picture in getCats()" class="column is-one-quarter" @click="displayDetails(picture['.key'])">
+        <div v-for="(cat, id) in getCats()" class="column is-one-quarter" @click="displayDetails(id)">
           <div class="card">
             <div class="card-image">
               <figure class="image is-4by3">
-                <img v-lazy="picture.url">
+                <img v-lazy="cat.url">
               </figure>
             </div>
             <div class="card-content">
               <div class="content">
-                {{ picture.comment }}
+                {{ cat.comment }}
                 <br>
                 <small>11:09 PM - 1 Jan 2016</small>
               </div>
@@ -28,6 +28,7 @@
   </div>
 </template>
 <script>
+import { reduce } from 'lodash'
 export default {
   methods: {
     displayDetails (id) {
@@ -36,14 +37,26 @@ export default {
     getCats () {
       if (navigator.onLine) {
         this.saveCatsToCache()
-        return this.$root.cat
+        return reduce(this.$root.cat, (cats, firebaseEntry) => {
+          cats[firebaseEntry['.key']] = {
+            url: firebaseEntry['url'],
+            comment: firebaseEntry['comment'],
+            info: firebaseEntry['info'],
+            created_at: firebaseEntry['created_at']
+          }
+          return cats
+        }, {})
       } else {
         return JSON.parse(localStorage.getItem('cats'))
       }
     },
     saveCatsToCache () {
-      this.$root.$firebaseRefs.cat.once('value', (snapchot) => {
-        localStorage.setItem('cats', JSON.stringify(snapchot.val()))
+      this.$root.$firebaseRefs.cat.orderByChild('created_at').once('value', (snapchot) => {
+        let cachedCats = {}
+        snapchot.forEach((catSnapchot) => {
+          cachedCats[catSnapchot.key] = catSnapchot.val()
+        })
+        localStorage.setItem('cats', JSON.stringify(cachedCats))
       })
     },
     mounted () {

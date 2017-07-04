@@ -2,15 +2,15 @@
   <div class="columns">
     <div class="column is-8">
       <div class="picture">
-        <img v-lazy="this.pictures[$route.params.id].url" />
+        <img v-lazy="this.cat.url" />
       </div>
       <div class="info">
-        <span>{{ this.pictures[$route.params.id].info }}</span>
+        <span>{{ this.cat.info }}</span>
       </div>
     </div>
     <div class="column is-4 is-8-mobile">
       <div class="comment">
-        <span>{{ this.pictures[$route.params.id].comment }}</span>
+        <span>{{ this.cat.comment }}</span>
       </div>
       <div class="actions">
         <router-link class="button is-info is-outlined" to="/post">
@@ -21,11 +21,18 @@
   </div>
 </template>
 <script>
-import data from '../data'
+import { find } from 'lodash'
 export default {
   data () {
     return {
-      'pictures': data.pictures
+      cat: null
+    }
+  },
+  mounted () {
+    if (navigator.onLine) {
+      this.cat = find(this.$root.cat, (cat) => cat['.key'] === this.$route.params.id)
+    } else {
+      this.cat = JSON.parse(localStorage.getItem('cats'))[this.$route.params.id]
     }
   }
 }
